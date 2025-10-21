@@ -113,12 +113,14 @@ STATE_BETTING_ACTIVITY_INDEX = {
     'Wyoming': 5,
 }
 
-# 假设数据
-TOTAL_MAU = 8_000_000  # 总月活跃用户（8百万）
-TOTAL_ACTIVE_TRADERS = 4_000_000  # 月度活跃交易者（4百万）
+# DraftKings数据（已知）
+DRAFTKINGS_MAU = 8_000_000  # DraftKings月活跃用户（800万）
+DRAFTKINGS_ACTIVE_TRADERS = 4_000_000  # DraftKings月度活跃交易者（400万）
+DRAFTKINGS_MARKET_SHARE = 0.28  # DraftKings市场份额 28%
 
-# DraftKings市场份额（假设在不同运营商中的分布）
-DRAFTKINGS_MARKET_SHARE = 0.28  # 28%
+# 根据DraftKings数据推算整个行业数据
+TOTAL_MAU = int(DRAFTKINGS_MAU / DRAFTKINGS_MARKET_SHARE)  # 约2857万
+TOTAL_ACTIVE_TRADERS = int(DRAFTKINGS_ACTIVE_TRADERS / DRAFTKINGS_MARKET_SHARE)  # 约1429万
 
 def calculate_state_distribution():
     """计算各州的用户分布"""
@@ -151,25 +153,27 @@ def calculate_state_distribution():
         mau_penetration = (mau_share / adult_pop) * 100
         trader_penetration = (trader_share / adult_pop) * 100
 
-        # 计算DraftKings的用户数
-        dk_mau = mau_share * DRAFTKINGS_MARKET_SHARE
-        dk_traders = trader_share * DRAFTKINGS_MARKET_SHARE
+        # 计算DraftKings的用户数（基于DraftKings的活跃度分布）
+        dk_mau = (activity / total_activity_index) * DRAFTKINGS_MAU
+        dk_traders = (activity / total_activity_index) * DRAFTKINGS_ACTIVE_TRADERS
 
         results.append({
             'State': state,
             'Population (M)': round(pop, 2),
             'Adult Pop (M)': round(adult_pop / 1_000_000, 2),
             'Activity Index': activity,
-            'Total MAU': int(mau_share),
-            'Total Active Traders': int(trader_share),
-            'MAU Penetration (%)': round(mau_penetration, 2),
-            'Trader Penetration (%)': round(trader_penetration, 2),
+            'Industry Total MAU': int(mau_share),
+            'Industry Active Traders': int(trader_share),
+            'Industry MAU Penetration (%)': round(mau_penetration, 2),
+            'Industry Trader Penetration (%)': round(trader_penetration, 2),
             'DraftKings MAU': int(dk_mau),
             'DraftKings Traders': int(dk_traders),
+            'DraftKings MAU Penetration (%)': round((dk_mau / adult_pop) * 100, 2),
+            'DraftKings Trader Penetration (%)': round((dk_traders / adult_pop) * 100, 2),
         })
 
-    # 按Total MAU降序排序
-    results.sort(key=lambda x: x['Total MAU'], reverse=True)
+    # 按Industry Total MAU降序排序
+    results.sort(key=lambda x: x['Industry Total MAU'], reverse=True)
 
     return results, total_legal_pop
 
@@ -180,17 +184,23 @@ def calculate_overall_metrics(results, total_legal_pop):
     overall_mau_penetration = (TOTAL_MAU / total_adult_pop) * 100
     overall_trader_penetration = (TOTAL_ACTIVE_TRADERS / total_adult_pop) * 100
 
+    # DraftKings渗透率
+    dk_mau_penetration = (DRAFTKINGS_MAU / total_adult_pop) * 100
+    dk_trader_penetration = (DRAFTKINGS_ACTIVE_TRADERS / total_adult_pop) * 100
+
     metrics = {
         'Total Legal States': len(LEGAL_ONLINE_BETTING_STATES),
         'Total Population (M)': round(total_legal_pop, 2),
         'Total Adult Population (M)': round(total_adult_pop / 1_000_000, 2),
-        'Total MAU': TOTAL_MAU,
-        'Total Active Traders': TOTAL_ACTIVE_TRADERS,
-        'Overall MAU Penetration (%)': round(overall_mau_penetration, 2),
-        'Overall Trader Penetration (%)': round(overall_trader_penetration, 2),
+        'Industry Total MAU': TOTAL_MAU,
+        'Industry Total Active Traders': TOTAL_ACTIVE_TRADERS,
+        'Industry MAU Penetration (%)': round(overall_mau_penetration, 2),
+        'Industry Trader Penetration (%)': round(overall_trader_penetration, 2),
         'DraftKings Market Share (%)': DRAFTKINGS_MARKET_SHARE * 100,
-        'DraftKings MAU': int(TOTAL_MAU * DRAFTKINGS_MARKET_SHARE),
-        'DraftKings Active Traders': int(TOTAL_ACTIVE_TRADERS * DRAFTKINGS_MARKET_SHARE),
+        'DraftKings MAU': DRAFTKINGS_MAU,
+        'DraftKings Active Traders': DRAFTKINGS_ACTIVE_TRADERS,
+        'DraftKings MAU Penetration (%)': round(dk_mau_penetration, 2),
+        'DraftKings Trader Penetration (%)': round(dk_trader_penetration, 2),
     }
 
     return metrics
@@ -243,19 +253,20 @@ def generate_report():
     for i, state in enumerate(top15, 1):
         print(f"\n{i}. {state['State']}")
         print(f"   人口: {state['Population (M)']}M | 成人人口: {state['Adult Pop (M)']}M | 活跃度指数: {state['Activity Index']}")
-        print(f"   总MAU: {state['Total MAU']:,} (渗透率: {state['MAU Penetration (%)']}%)")
-        print(f"   总活跃交易者: {state['Total Active Traders']:,} (渗透率: {state['Trader Penetration (%)']}%)")
-        print(f"   DraftKings MAU: {state['DraftKings MAU']:,} | DraftKings交易者: {state['DraftKings Traders']:,}")
+        print(f"   行业总MAU: {state['Industry Total MAU']:,} (渗透率: {state['Industry MAU Penetration (%)']}%)")
+        print(f"   行业总活跃交易者: {state['Industry Active Traders']:,} (渗透率: {state['Industry Trader Penetration (%)']}%)")
+        print(f"   DraftKings MAU: {state['DraftKings MAU']:,} (渗透率: {state['DraftKings MAU Penetration (%)']}%)")
+        print(f"   DraftKings交易者: {state['DraftKings Traders']:,} (渗透率: {state['DraftKings Trader Penetration (%)']}%)")
 
-    # 渗透率最高的州
-    print("\n\n【渗透率Top 10州】")
+    # DraftKings渗透率最高的州
+    print("\n\n【DraftKings渗透率Top 10州】")
     print("-" * 100)
-    penetration_sorted = sorted(results, key=lambda x: x['MAU Penetration (%)'], reverse=True)[:10]
+    penetration_sorted = sorted(results, key=lambda x: x['DraftKings MAU Penetration (%)'], reverse=True)[:10]
     for i, state in enumerate(penetration_sorted, 1):
         print(f"{i:2}. {state['State']:20} | 人口: {state['Population (M)']:5.2f}M | "
-              f"MAU渗透率: {state['MAU Penetration (%)']:5.2f}% | "
-              f"交易者渗透率: {state['Trader Penetration (%)']:5.2f}% | "
-              f"总MAU: {state['Total MAU']:>8,}")
+              f"DK MAU渗透率: {state['DraftKings MAU Penetration (%)']:5.2f}% | "
+              f"DK交易者渗透率: {state['DraftKings Trader Penetration (%)']:5.2f}% | "
+              f"DK MAU: {state['DraftKings MAU']:>8,}")
 
     # 保存到CSV
     csv_file = '/home/user/leconteren/state_betting_analysis.csv'

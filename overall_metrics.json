@@ -2,11 +2,13 @@
   "Total Legal States": 36,
   "Total Population (M)": 198.54,
   "Total Adult Population (M)": 129.05,
-  "Total MAU": 8000000,
-  "Total Active Traders": 4000000,
-  "Overall MAU Penetration (%)": 6.2,
-  "Overall Trader Penetration (%)": 3.1,
+  "Industry Total MAU": 28571428,
+  "Industry Total Active Traders": 14285714,
+  "Industry MAU Penetration (%)": 22.14,
+  "Industry Trader Penetration (%)": 11.07,
   "DraftKings Market Share (%)": 28.000000000000004,
-  "DraftKings MAU": 2240000,
-  "DraftKings Active Traders": 1120000
+  "DraftKings MAU": 8000000,
+  "DraftKings Active Traders": 4000000,
+  "DraftKings MAU Penetration (%)": 6.2,
+  "DraftKings Trader Penetration (%)": 3.1
 }
